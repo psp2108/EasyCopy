@@ -10,8 +10,8 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import javax.swing.*;
-import java.util.*;
 import java.awt.event.*;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,6 +31,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
     public static GroupsKeylinkClassBL keyvalues = null;
     public static boolean MouseInsideAdd = false;
     public static boolean ThreadRunning = false;
+    public static Rectangle Bounds = null;
 
     public static JPanel topPanel = null;
     public static JPanel centerPanel = null;
@@ -54,6 +55,13 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
 
     public static void main(String[] args) throws Exception {
         // TODO code application logic here
+
+        File dir = new File(GroupsKeylinkClassBL.DEFAULT_DIRECTORY_PATH);
+        if (!dir.exists()) {
+            System.out.println("Directory Created");
+            dir.mkdir();
+        }
+
         keyvalues = GroupsKeylinkClassBL.getStoredObject();
 
         addButton = new JButton("Add");
@@ -61,7 +69,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
         topPanel = new JPanel();
         centerPanel = new JPanel();
 
-        model = new SortedComboBoxModel<String>();
+        model = new SortedComboBoxModel<>();
         groupSelection = new JComboBox(model);
 
         mainFrame = new Easycopy();
@@ -147,9 +155,9 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
 
     public void removeAllComponents() {
         Component[] comp = centerPanel.getComponents();
-        for (int i = 0; i < comp.length; i++) {
-            if (comp[i] instanceof JButton) {
-                JButton btn = (JButton) comp[i];
+        for (Component comp1 : comp) {
+            if (comp1 instanceof JButton) {
+                JButton btn = (JButton) comp1;
                 centerPanel.remove(btn);
             }
         }
@@ -159,7 +167,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        JButton b = null;
+        JButton b;
         int modifier = e.getModifiers();
 
         //Shift : 17
@@ -169,7 +177,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
         if (e.getSource() == addButton) {
 
             if (modifier == 18 && e.getActionCommand().equals("Add Group")) {
-                //Ctrl Pressed Add
+                //Ctrl Pressed Add Group
 
                 if (!btnLabel.getText().equals("")) {
 
@@ -229,20 +237,15 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
                             if (component != addButton && component != groupSelection) {
                                 int x = component.getX();
                                 int y = component.getY();
-                                MouseEvent phantom = new MouseEvent(component, MouseEvent.MOUSE_MOVED, System.currentTimeMillis(), 0, x+1, y+1, 0, false);
+                                MouseEvent phantom = new MouseEvent(component, MouseEvent.MOUSE_MOVED, System.currentTimeMillis(), 0, x + 1, y + 1, 0, false);
                                 ToolTipManager.sharedInstance().mouseMoved(phantom);
                             }
                         }
 
                         @Override
                         public void mouseExited(MouseEvent e) {
-                            JComponent component = (JComponent) e.getSource();
-                            if (component != addButton && component != groupSelection) {
-                                int x = component.getX();
-                                int y = component.getY();
-                                MouseEvent phantom = new MouseEvent(component, MouseEvent.MOUSE_EXITED, System.currentTimeMillis(), 0, x-1, y-1, 0, 0, 0, false, 0);
-                                ToolTipManager.sharedInstance().mouseMoved(phantom);
-                            }
+                            mainFrame.repaint();
+                            mainFrame.revalidate();
                         }
                     });
 
@@ -258,39 +261,57 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
                 } else {
                     JOptionPane.showMessageDialog(mainFrame, "Add and select group first");
                 }
+
+            }
+
+            mainFrame.repaint();
+            mainFrame.revalidate();
+            try {
+                keyvalues.saveData();
+            } catch (Exception ex) {
+                Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         } else {
             b = (JButton) e.getSource();
 
-            if (modifier == 24) {
-                centerPanel.remove(b);
-                setTextToClipboard("");
-                mainFrame.repaint();
-                mainFrame.revalidate();
-            } else if (modifier == 17) {
-                b.setToolTipText(htmlStart + getTextFromClipboard() + htmlEnd);
-                if (!btnLabel.getText().equals("")) {
-                    b.setText(btnLabel.getText());
-                    btnLabel.setText("");
-                }
-            } else {
-                String tempOP = b.getToolTipText();
-                tempOP = tempOP.substring(htmlStart.length(), tempOP.length() - htmlEnd.length());
-                setTextToClipboard(tempOP);
+            switch (modifier) {
+                case 24:
+                    centerPanel.remove(b);
+                    setTextToClipboard("");
+                    mainFrame.repaint();
+                    mainFrame.revalidate();
+
+                    keyvalues.updateGroup(groupSelection.getSelectedItem().toString(), getButtonArray());
+                    try {
+                        keyvalues.saveData();
+                    } catch (Exception ex) {
+                        Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    break;
+                case 17:
+                    b.setToolTipText(htmlStart + getTextFromClipboard() + htmlEnd);
+                    if (!btnLabel.getText().equals("")) {
+                        b.setText(btnLabel.getText());
+                        btnLabel.setText("");
+                    }
+                    mainFrame.repaint();
+                    mainFrame.revalidate();
+
+                    keyvalues.updateGroup(groupSelection.getSelectedItem().toString(), getButtonArray());
+                    try {
+                        keyvalues.saveData();
+                    } catch (Exception ex) {
+                        Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    break;
+                default:
+                    String tempOP = b.getToolTipText();
+                    tempOP = tempOP.substring(htmlStart.length(), tempOP.length() - htmlEnd.length());
+                    setTextToClipboard(tempOP);
+                    break;
             }
-
-            keyvalues.updateGroup(groupSelection.getSelectedItem().toString(), getButtonArray());
         }
-
-        try {
-            keyvalues.saveData();
-        } catch (Exception ex) {
-            Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        mainFrame.repaint();
-        mainFrame.revalidate();
 
     }
 
@@ -324,12 +345,18 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
 
         if (MouseInsideAdd) {
             int keyCode = e.getKeyCode();
-            if (keyCode == 16) {
-                addButton.setText("Rename Group");
-            } else if (keyCode == 18) {
-                addButton.setText("Delete Group");
-            } else if (keyCode == 17) {
-                addButton.setText("Add Group");
+            switch (keyCode) {
+                case 16:
+                    addButton.setText("Rename Group");
+                    break;
+                case 18:
+                    addButton.setText("Delete Group");
+                    break;
+                case 17:
+                    addButton.setText("Add Group");
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -368,69 +395,76 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
     public void mouseEntered(MouseEvent e) {
         int modifier = e.getModifiers();
 
-        if (modifier == 8) {
-            if (e.getSource() == addButton) {
-                addButton.setText("Delete Group");
-            }
-        } else if (modifier == 2) {
-            if (e.getSource() == addButton) {
-                addButton.setText("Add Group");
-            }
-        } else if (modifier == 1) {
-            if (e.getSource() == addButton) {
-                addButton.setText("Rename Group");
-            }
-        } else {
-            if (e.getSource() == addButton) {
-                addButton.setText("Add");
-            }
+        switch (modifier) {
+            case 8:
+                if (e.getSource() == addButton) {
+                    addButton.setText("Delete Group");
+                }
+                break;
+            case 2:
+                if (e.getSource() == addButton) {
+                    addButton.setText("Add Group");
+                }
+                break;
+            case 1:
+                if (e.getSource() == addButton) {
+                    addButton.setText("Rename Group");
+                }
+                break;
+            default:
+                if (e.getSource() == addButton) {
+                    addButton.setText("Add");
+                }
+                break;
         }
         MouseInsideAdd = true;
+
     }
 
     @Override
     public void mouseExited(MouseEvent e) {
         addButton.setText("Add");
         MouseInsideAdd = false;
-
     }
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        mainFrame.repaint();
-        mainFrame.revalidate();
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        mainFrame.repaint();
-        mainFrame.revalidate();
 
         if (e.getSource() == addButton) {
             int modifier = e.getModifiers();
 
-            if (modifier == 8) {
-                if (e.getSource() == addButton) {
-                    addButton.setText("Delete Group");
-                }
-            } else if (modifier == 2) {
-                addButton.setText("Add Group");
-                if (e.getSource() == addButton) {
-                }
-            } else if (modifier == 1) {
-                if (e.getSource() == addButton) {
-                    addButton.setText("Rename Group");
-                }
-            } else {
-                if (e.getSource() == addButton) {
-                    addButton.setText("Add");
-                }
+            switch (modifier) {
+                case 8:
+                    if (e.getSource() == addButton) {
+                        addButton.setText("Delete Group");
+                    }
+                    break;
+                case 2:
+                    addButton.setText("Add Group");
+                    if (e.getSource() == addButton) {
+                    }
+                    break;
+                case 1:
+                    if (e.getSource() == addButton) {
+                        addButton.setText("Rename Group");
+                    }
+                    break;
+                default:
+                    if (e.getSource() == addButton) {
+                        addButton.setText("Add");
+                    }
+                    break;
             }
         }
     }
 
     @Override
     public void componentResized(ComponentEvent e) {
+        Bounds = mainFrame.getBounds();
         if (!ThreadRunning) {
             ThreadRunning = true;
             new saveDataInBG().start();
@@ -439,6 +473,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
 
     @Override
     public void componentMoved(ComponentEvent e) {
+        Bounds = mainFrame.getBounds();
         if (!ThreadRunning) {
             ThreadRunning = true;
             new saveDataInBG().start();
@@ -459,7 +494,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
         public void run() {
             try {
                 Thread.sleep(700);
-                keyvalues.setBounds(mainFrame.getBounds());
+                keyvalues.setBounds(Bounds);
                 keyvalues.saveData();
             } catch (Exception ex) {
                 System.out.println("Bounds--- " + ex);
