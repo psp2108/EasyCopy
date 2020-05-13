@@ -222,6 +222,29 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
                     b.setToolTipText(htmlStart + getTextFromClipboard() + htmlEnd);
 
                     b.addActionListener(mainFrame);
+                    b.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseEntered(MouseEvent e) {
+                            JComponent component = (JComponent) e.getSource();
+                            if (component != addButton && component != groupSelection) {
+                                int x = component.getX();
+                                int y = component.getY();
+                                MouseEvent phantom = new MouseEvent(component, MouseEvent.MOUSE_MOVED, System.currentTimeMillis(), 0, x+1, y+1, 0, false);
+                                ToolTipManager.sharedInstance().mouseMoved(phantom);
+                            }
+                        }
+
+                        @Override
+                        public void mouseExited(MouseEvent e) {
+                            JComponent component = (JComponent) e.getSource();
+                            if (component != addButton && component != groupSelection) {
+                                int x = component.getX();
+                                int y = component.getY();
+                                MouseEvent phantom = new MouseEvent(component, MouseEvent.MOUSE_EXITED, System.currentTimeMillis(), 0, x-1, y-1, 0, 0, 0, false, 0);
+                                ToolTipManager.sharedInstance().mouseMoved(phantom);
+                            }
+                        }
+                    });
 
                     centerPanel.add(b);
                     btnLabel.setText("");
@@ -369,6 +392,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
     public void mouseExited(MouseEvent e) {
         addButton.setText("Add");
         MouseInsideAdd = false;
+
     }
 
     @Override
