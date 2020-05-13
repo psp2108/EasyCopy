@@ -5,6 +5,7 @@
  */
 package easycopy;
 
+import java.awt.Rectangle;
 import java.io.Serializable;
 import java.util.Vector;
 
@@ -16,8 +17,12 @@ public class GroupsKeylinkClass implements Serializable {
 
     private Vector<String> groups = null;
     private Vector<GroupKeysClass> keys = null;
+    private Rectangle bounds = null;
 
     public GroupsKeylinkClass() {
+        groups = new Vector<String> ();
+        keys = new Vector<GroupKeysClass>();
+        bounds = new Rectangle();
     }
 
     public Vector<String> getGroups() {
@@ -34,5 +39,13 @@ public class GroupsKeylinkClass implements Serializable {
 
     public void setKeys(Vector<GroupKeysClass> keys) {
         this.keys = keys;
+    }
+    
+    public void setBounds(Rectangle bounds) {
+        this.bounds = bounds;
+    }
+
+    public Rectangle getBounds() {
+        return bounds;
     }
 }

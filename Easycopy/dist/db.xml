@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch4jConfig>
+  <dontWrapJar>false</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>F:\Programming\jAVA\NetBins Programs\EasyCopy\V3.0\Easycopy\dist\Easycopy.jar</jar>
+  <outfile>F:\Programming\jAVA\NetBins Programs\EasyCopy\V3.0\Easycopy\dist\Easy Copy.exe</outfile>
+  <errTitle></errTitle>
+  <cmdLine></cmdLine>
+  <chdir>.</chdir>
+  <priority>normal</priority>
+  <downloadUrl>http://java.com/download</downloadUrl>
+  <supportUrl></supportUrl>
+  <stayAlive>false</stayAlive>
+  <restartOnCrash>false</restartOnCrash>
+  <manifest></manifest>
+  <icon>F:\Programming\jAVA\NetBins Programs\EasyCopy\V3.0\Easycopy\dist\Copy-Paste_131627497777026532.ico</icon>
+  <classPath>
+    <mainClass>easycopy.Easycopy</mainClass>
+  </classPath>
+  <jre>
+    <path>C:\Program Files\Java\jre1.8.0_91\bin</path>
+    <bundledJre64Bit>true</bundledJre64Bit>
+    <bundledJreAsFallback>true</bundledJreAsFallback>
+    <minVersion>1.0.0</minVersion>
+    <maxVersion></maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+    <runtimeBits>64/32</runtimeBits>
+  </jre>
+</launch4jConfig>

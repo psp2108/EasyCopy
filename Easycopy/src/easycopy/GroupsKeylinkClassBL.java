@@ -5,6 +5,7 @@
  */
 package easycopy;
 
+import java.awt.Rectangle;
 import java.io.Serializable;
 import java.util.Vector;
 import javax.swing.JButton;
@@ -22,6 +23,8 @@ public class GroupsKeylinkClassBL implements Serializable {
     private String dataFilePath = "";
     public static String DEFAULT_FILE_PATH = System.getProperty("user.dir") + "\\database\\dataFile";
 
+    public Rectangle bounds = null;
+    
     public static final int DUPLICATE_GROUP = 1;
     public static final int SUCCESSFULLY_ADDED = 0;
 
@@ -30,9 +33,10 @@ public class GroupsKeylinkClassBL implements Serializable {
         keyGroups = new Vector();
         dataObj = new GroupsKeylinkClass();
         dataFilePath = filePath;
+        bounds = new Rectangle(0,0, 200,200);
     }
 
-    public int addGroup(String GroupName) throws Exception {
+    public int addGroup(String GroupName){
 
         if (groupName.contains(groupName)) {
             return DUPLICATE_GROUP;
@@ -43,21 +47,21 @@ public class GroupsKeylinkClassBL implements Serializable {
         keyGroups.get(keyGroups.size() - 1).keyValue = new Vector();
         dataObj.setGroups(groupName);
         dataObj.setKeys(keyGroups);
-        ReadWriteObj.serializeDataOut(dataObj, DEFAULT_FILE_PATH);
+//        ReadWriteObj.serializeDataOut(dataObj, DEFAULT_FILE_PATH);
         return SUCCESSFULLY_ADDED;
     }
 
-    public void deleteGroup(String GroupName) throws Exception {
+    public void deleteGroup(String GroupName){
         int groupIndex = groupName.indexOf(GroupName);
         groupName.remove(groupIndex);
         keyGroups.get(groupIndex).keyValue.clear();
         keyGroups.remove(groupIndex);
         dataObj.setGroups(groupName);
         dataObj.setKeys(keyGroups);
-        ReadWriteObj.serializeDataOut(dataObj, DEFAULT_FILE_PATH);
+//        ReadWriteObj.serializeDataOut(dataObj, DEFAULT_FILE_PATH);
     }
 
-    public void updateGroup(String GroupName, JButton... Items) throws Exception {
+    public void updateGroup(String GroupName, JButton... Items){
         int groupIndex = groupName.indexOf(GroupName);
 
         keyGroups.get(groupIndex).keyValue.clear();
@@ -66,7 +70,7 @@ public class GroupsKeylinkClassBL implements Serializable {
         }
         dataObj.setGroups(groupName);
         dataObj.setKeys(keyGroups);
-        ReadWriteObj.serializeDataOut(dataObj, DEFAULT_FILE_PATH);
+//        ReadWriteObj.serializeDataOut(dataObj, DEFAULT_FILE_PATH);
 
     }
 
@@ -88,7 +92,20 @@ public class GroupsKeylinkClassBL implements Serializable {
         }
         return null;
     }
+    
 
+    public Rectangle getBounds(){
+        return bounds;
+    }
+    public void setBounds(Rectangle bounds){
+        this.bounds = bounds;
+        this.dataObj.setBounds(bounds);
+    }
+    
+    public void saveData() throws Exception{
+        ReadWriteObj.serializeDataOut(dataObj, DEFAULT_FILE_PATH);        
+    }
+    
     public static GroupsKeylinkClassBL getStoredObject() throws Exception {
         GroupsKeylinkClassBL tempObj = new GroupsKeylinkClassBL(DEFAULT_FILE_PATH);
         tempObj.dataObj = ReadWriteObj.serializeDataIn(tempObj.dataFilePath);
@@ -96,8 +113,10 @@ public class GroupsKeylinkClassBL implements Serializable {
         if (tempObj.dataObj != null) {
             tempObj.groupName = tempObj.dataObj.getGroups();
             tempObj.keyGroups = tempObj.dataObj.getKeys();
+            tempObj.bounds = tempObj.dataObj.getBounds();
         } else {
             tempObj.dataObj = new GroupsKeylinkClass();
+            tempObj.dataObj.setBounds(tempObj.bounds);
         }
         return tempObj;
 

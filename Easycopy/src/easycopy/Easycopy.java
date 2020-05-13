@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  *
  * @author Pratik
  */
-public class Easycopy extends JFrame implements ActionListener, KeyListener, ItemListener, MouseListener, MouseMotionListener {
+public class Easycopy extends JFrame implements ActionListener, KeyListener, ItemListener, MouseListener, MouseMotionListener, ComponentListener {
 
     public static JButton addButton = null;
     public static JTextField btnLabel = null;
@@ -30,6 +30,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
 
     public static GroupsKeylinkClassBL keyvalues = null;
     public static boolean MouseInsideAdd = false;
+    public static boolean ThreadRunning = false;
 
     public static JPanel topPanel = null;
     public static JPanel centerPanel = null;
@@ -65,7 +66,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
 
         mainFrame = new Easycopy();
         mainFrame.setVisible(true);
-        mainFrame.setSize(200, 200);
+        mainFrame.setBounds(keyvalues.getBounds());
         mainFrame.setTitle("Easy Copy");
         mainFrame.setDefaultCloseOperation(EXIT_ON_CLOSE);
         mainFrame.setAlwaysOnTop(true);
@@ -93,6 +94,7 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
         mainFrame.initializeForm();
 
         mainFrame.addMouseMotionListener(mainFrame);
+        mainFrame.addComponentListener(mainFrame);
         addButton.addMouseMotionListener(mainFrame);
         addButton.addKeyListener(mainFrame);
     }
@@ -170,54 +172,45 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
                 //Ctrl Pressed Add
 
                 if (!btnLabel.getText().equals("")) {
-                    try {
-                        if (!ifPresentInJCombo(groupSelection, btnLabel.getText())) {
-                            keyvalues.addGroup(btnLabel.getText());
-                            addGroupJCombo(btnLabel.getText());
-                        } else {
-                            JOptionPane.showMessageDialog(mainFrame, "You are adding a duplicate group");
-                        }
-                    } catch (Exception ex) {
-                        System.out.println("AddG--- " + ex.toString());
-                        Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
+
+                    if (!ifPresentInJCombo(groupSelection, btnLabel.getText())) {
+                        keyvalues.addGroup(btnLabel.getText());
+                        addGroupJCombo(btnLabel.getText());
+                    } else {
+                        JOptionPane.showMessageDialog(mainFrame, "You are adding a duplicate group");
                     }
+
                     groupSelection.setSelectedItem(btnLabel.getText());
                     btnLabel.setText("");
+                    btnLabel.requestFocus();
                 } else {
                     JOptionPane.showMessageDialog(mainFrame, "Empty group name not accepted");
                 }
 
             } else if (modifier == 24 && e.getActionCommand().equals("Delete Group")) {
                 //Alt Pressed Delete Group
-                try {
+                if (groupSelection.getItemCount() > 0) {
                     keyvalues.deleteGroup(groupSelection.getSelectedItem().toString());
                     removeGroupJCombo(groupSelection.getSelectedItem().toString());
-                } catch (Exception ex) {
-                    System.out.println("DeleteG--- " + ex.toString());
-
                 }
             } else if (modifier == 17 && e.getActionCommand().equals("Rename Group")) {
                 //Shift Pressed Rename Group
                 String newGrpName = btnLabel.getText();
 
                 if (!btnLabel.getText().equals("") && !ifPresentInJCombo(groupSelection, newGrpName)) {
-                    try {
-                        String tempGrpName = groupSelection.getSelectedItem().toString();
-                        JButton[] tempButtons = keyvalues.getGroup(tempGrpName);
 
-                        keyvalues.deleteGroup(tempGrpName);
-                        removeGroupJCombo(tempGrpName);
+                    String tempGrpName = groupSelection.getSelectedItem().toString();
+                    JButton[] tempButtons = keyvalues.getGroup(tempGrpName);
 
-                        keyvalues.addGroup(newGrpName);
-                        keyvalues.updateGroup(newGrpName, tempButtons);
-                        addGroupJCombo(newGrpName);
-                        groupSelection.setSelectedItem(newGrpName);
-                        btnLabel.setText("");
+                    keyvalues.deleteGroup(tempGrpName);
+                    removeGroupJCombo(tempGrpName);
 
-                    } catch (Exception ex) {
-                        System.out.println("RenameG--- " + ex.toString());
-                        Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    keyvalues.addGroup(newGrpName);
+                    keyvalues.updateGroup(newGrpName, tempButtons);
+                    addGroupJCombo(newGrpName);
+                    groupSelection.setSelectedItem(newGrpName);
+                    btnLabel.setText("");
+
                 }
 
             } else if (modifier == 16 && e.getActionCommand().equals("Add")) {
@@ -237,12 +230,8 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
                     mainFrame.repaint();
                     mainFrame.revalidate();
 
-                    try {
-                        keyvalues.updateGroup(groupSelection.getSelectedItem().toString(), getButtonArray());
-                    } catch (Exception ex) {
-                        System.out.println("Add--- " + ex.toString());
-                        Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    keyvalues.updateGroup(groupSelection.getSelectedItem().toString(), getButtonArray());
+
                 } else {
                     JOptionPane.showMessageDialog(mainFrame, "Add and select group first");
                 }
@@ -268,15 +257,18 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
                 setTextToClipboard(tempOP);
             }
 
-            try {
-                keyvalues.updateGroup(groupSelection.getSelectedItem().toString(), getButtonArray());
-            } catch (Exception ex) {
-                Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            keyvalues.updateGroup(groupSelection.getSelectedItem().toString(), getButtonArray());
+        }
+
+        try {
+            keyvalues.saveData();
+        } catch (Exception ex) {
+            Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         mainFrame.repaint();
         mainFrame.revalidate();
+
     }
 
     public void addGroupJCombo(String... grpName) {
@@ -410,6 +402,46 @@ public class Easycopy extends JFrame implements ActionListener, KeyListener, Ite
                     addButton.setText("Add");
                 }
             }
+        }
+    }
+
+    @Override
+    public void componentResized(ComponentEvent e) {
+        if (!ThreadRunning) {
+            ThreadRunning = true;
+            new saveDataInBG().start();
+        }
+    }
+
+    @Override
+    public void componentMoved(ComponentEvent e) {
+        if (!ThreadRunning) {
+            ThreadRunning = true;
+            new saveDataInBG().start();
+        }
+    }
+
+    @Override
+    public void componentShown(ComponentEvent e) {
+    }
+
+    @Override
+    public void componentHidden(ComponentEvent e) {
+    }
+
+    public class saveDataInBG extends Thread {
+
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(700);
+                keyvalues.setBounds(mainFrame.getBounds());
+                keyvalues.saveData();
+            } catch (Exception ex) {
+                System.out.println("Bounds--- " + ex);
+                Logger.getLogger(Easycopy.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            ThreadRunning = false;
         }
     }
 
